@@ -4,8 +4,8 @@ from PIL import Image
 import requests
 from io import BytesIO
 
-# Path to the Excel file
-file_path = r"D:\Workspace_vs_code\Matana_University\Presentasi_Sekolah\Data_MPL.xlsx"
+# Path to the Excel file from GitHub
+file_path = "https://github.com/zenklinov/MLBB_PredictionWR/raw/main/Data_MPL.xlsx"
 
 # Import data from Excel
 df = pd.read_excel(file_path)
@@ -122,4 +122,4 @@ if st.button("Lakukan Prediksi"):
         st.subheader("Hasil Prediksi")
         st.write(f"Menang: {winner} dengan kemungkinan {winning_percentage:.2f}%")
     else:
-        st.warning("Pastikan semua role telah diisi sebelum melakukan prediksi!")
+        st.warning("Pastikan semua role telah diisi!")
