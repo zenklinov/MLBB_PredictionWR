@@ -107,8 +107,8 @@ opponent_team = [opponent_gold_lane, opponent_exp_lane, opponent_mid_lane, oppon
 if st.button("Lakukan Prediksi"):
     if all(hero != "Choose an option" for hero in your_team + opponent_team):
         # Calculate win rate for both teams
-        your_team_winrate = average(df[df["Hero"].isin(your_team)]["Win"])
-        opponent_team_winrate = average(df[df["Hero"].isin(opponent_team)]["Win"])
+        your_team_winrate = sum(df[df["Hero"].isin(your_team)]["Win"])
+        opponent_team_winrate = sum(df[df["Hero"].isin(opponent_team)]["Win"])
 
         # Predict the winner
         if your_team_winrate > opponent_team_winrate:
