@@ -9,7 +9,11 @@ from io import BytesIO
 def load_data(url):
     """Loads data from a remote Excel file."""
     try:
-        return pd.read_excel(url)
+        # Cache the data loading to prevent re-downloading on every interaction
+        @st.cache_data
+        def get_data(url):
+            return pd.read_excel(url)
+        return get_data(url)
     except Exception as e:
         st.error(f"Error loading data file: {e}")
         return pd.DataFrame() # Return empty dataframe on error
@@ -27,6 +31,14 @@ def load_image_from_url(url):
     except Exception as e:
         st.error(f"Error loading image from URL: {e}")
         return None
+
+def reset_selections():
+    """Clears the hero selections from the session state."""
+    roles = ["Gold Lane", "Exp Lane", "Mid Lane", "Roamer", "Jungler"]
+    for role in roles:
+        st.session_state[f'team_a_{role}'] = None
+        st.session_state[f'team_b_{role}'] = None
+
 
 # --- Main App Logic ---
 
@@ -106,68 +118,82 @@ if not df.empty:
     st.subheader("Bangun Komposisi Tim")
     
     all_heroes = sorted(df["Hero"].tolist())
+    roles = ["Gold Lane", "Exp Lane", "Mid Lane", "Roamer", "Jungler"]
     
+    # Initialize session state for selections
+    for role in roles:
+        if f'team_a_{role}' not in st.session_state:
+            st.session_state[f'team_a_{role}'] = None
+        if f'team_b_{role}' not in st.session_state:
+            st.session_state[f'team_b_{role}'] = None
+
+    team_a_heroes = []
+    team_b_heroes = []
+
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader("Tim Anda")
-        your_team = []
-        # Use a list of roles to generate select boxes dynamically
-        roles = ["Gold Lane", "Exp Lane", "Mid Lane", "Roamer", "Jungler"]
-        
+        st.subheader("Tim A")
         # Keep track of selected heroes to prevent duplicates
-        selected_heroes_your_team = []
+        selected_heroes_a = []
         for role in roles:
-            available_heroes = [h for h in all_heroes if h not in selected_heroes_your_team]
-            hero = st.selectbox(f"{role}:", available_heroes, key=f"your_{role}")
-            selected_heroes_your_team.append(hero)
-        your_team = selected_heroes_your_team
+            # Get heroes that are not yet selected in this team
+            available_heroes = [h for h in all_heroes if h not in selected_heroes_a]
+            hero = st.selectbox(f"{role}:", available_heroes, key=f"team_a_{role}", index=None, placeholder="Pilih hero...")
+            if hero:
+                selected_heroes_a.append(hero)
+        team_a_heroes = selected_heroes_a
 
 
     with col2:
-        st.subheader("Tim Lawan")
-        opponent_team = []
-        
+        st.subheader("Tim B")
         # Keep track of selected heroes to prevent duplicates
-        selected_heroes_opponent = []
+        selected_heroes_b = []
         for role in roles:
-            # Lawan tidak bisa memilih hero yang sudah dipilih tim Anda
-            available_heroes = [h for h in all_heroes if h not in your_team and h not in selected_heroes_opponent]
-            hero = st.selectbox(f"{role} (Lawan):", available_heroes, key=f"opp_{role}")
-            selected_heroes_opponent.append(hero)
-        opponent_team = selected_heroes_opponent
+            # Team B cannot pick heroes already chosen by Team A or by other roles in Team B
+            available_heroes = [h for h in all_heroes if h not in team_a_heroes and h not in selected_heroes_b]
+            hero = st.selectbox(f"{role}:", available_heroes, key=f"team_b_{role}", index=None, placeholder="Pilih hero...")
+            if hero:
+                selected_heroes_b.append(hero)
+        team_b_heroes = selected_heroes_b
+
+    # --- Action Buttons ---
+    pred_col, reset_col = st.columns(2)
+    
+    predict_button = pred_col.button("Lakukan Prediksi", use_container_width=True, type="primary")
+    reset_button = reset_col.button("Reset Pilihan Hero", use_container_width=True, on_click=reset_selections)
 
 
     # --- Prediction Logic ---
-    if st.button("Lakukan Prediksi", use_container_width=True, type="primary"):
-        # Check for duplicate heroes across both teams
-        if len(set(your_team + opponent_team)) != 10:
-            st.warning("Pastikan tidak ada hero yang sama di kedua tim dan semua role telah diisi!")
+    if predict_button:
+        # Check if all roles are filled
+        if len(team_a_heroes) != 5 or len(team_b_heroes) != 5:
+            st.warning("Pastikan semua role di Tim A dan Tim B telah diisi!")
         else:
             # Calculate win rate for both teams based on the 'Win' column
-            your_team_win_sum = df[df["Hero"].isin(your_team)]["Win"].sum()
-            opponent_team_win_sum = df[df["Hero"].isin(opponent_team)]["Win"].sum()
+            team_a_win_sum = df[df["Hero"].isin(team_a_heroes)]["Win"].sum()
+            team_b_win_sum = df[df["Hero"].isin(team_b_heroes)]["Win"].sum()
 
-            total_win_sum = your_team_win_sum + opponent_team_win_sum
+            total_win_sum = team_a_win_sum + team_b_win_sum
 
             if total_win_sum == 0:
                 st.error("Tidak dapat menghitung prediksi. Total kemungkinan menang adalah nol.")
             else:
-                your_team_percentage = (your_team_win_sum / total_win_sum) * 100
-                opponent_team_percentage = (opponent_team_win_sum / total_win_sum) * 100
+                team_a_percentage = (team_a_win_sum / total_win_sum) * 100
+                team_b_percentage = (team_b_win_sum / total_win_sum) * 100
 
                 # Display the prediction result
                 st.subheader("Hasil Prediksi")
                 
-                if your_team_win_sum > opponent_team_win_sum:
-                    st.success(f"Tim Anda memiliki kemungkinan menang lebih tinggi: **{your_team_percentage:.2f}%**")
-                elif opponent_team_win_sum > your_team_win_sum:
-                     st.error(f"Tim Lawan memiliki kemungkinan menang lebih tinggi: **{opponent_team_percentage:.2f}%**")
+                if team_a_win_sum > team_b_win_sum:
+                    st.success(f"Tim A memiliki kemungkinan menang lebih tinggi: **{team_a_percentage:.2f}%**")
+                elif team_b_win_sum > team_a_win_sum:
+                     st.error(f"Tim B memiliki kemungkinan menang lebih tinggi: **{team_b_percentage:.2f}%**")
                 else:
                     st.info(f"Kekuatan kedua tim seimbang! Kemungkinan menang 50/50.")
 
                 # Progress bar for visualization
-                st.progress(your_team_percentage / 100)
-                st.markdown(f"**Tim Anda ({your_team_percentage:.2f}%)** vs **Tim Lawan ({opponent_team_percentage:.2f}%)**")
+                st.progress(team_a_percentage / 100)
+                st.markdown(f"**Tim A ({team_a_percentage:.2f}%)** vs **Tim B ({team_b_percentage:.2f}%)**")
 else:
     st.error("Gagal memuat data hero. Aplikasi tidak dapat berjalan.")
