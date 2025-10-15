@@ -63,7 +63,7 @@ if logo_img:
 st.title("Matana University")
 st.markdown(
     """
-    Selamat datang di Matana University! Bergabunglah dengan program studi Statistika kami, di mana lulusan kami telah sukses di ruang lingkup pemerintahan maupun swasta, di berbagai sektor seperti ekonomi, kebumian, agrikultur, kesehatan, informatika, dll. 
+    Selamat datang di Matana University! Bergabunglah dengan program studi Data Science dan Aktuaria kami, di mana lulusan kami telah sukses di ruang lingkup pemerintahan maupun swasta, di berbagai sektor seperti ekonomi, kebumian, agrikultur, kesehatan, informatika, dll. 
     
     Anda juga dapat menjadi ahli dalam analisis data seperti dalam game Mobile Legends! Dengan kurikulum inovatif dan praktik langsung, Anda akan mempelajari cara mengolah serta menganalisis data untuk meningkatkan strategi permainan. Raih peluang karier menarik di industri game dan buktikan bahwa angka adalah senjata utama Anda!
     """
