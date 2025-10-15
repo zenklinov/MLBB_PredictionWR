@@ -54,7 +54,7 @@ st.set_page_config(
 
 # --- Header Section ---
 # Updated and verified image URL for Matana University Logo
-logo_url = "https://matanauniversity.ac.id/wp-content/uploads/2022/09/Logo-Matana-University-1.png"
+logo_url = "https://www.matanauniversity.ac.id/static/images/logo-matana-white_medium.webpg"
 logo_img = load_image_from_url(logo_url)
 
 if logo_img:
